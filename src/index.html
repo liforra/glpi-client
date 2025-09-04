@@ -21,13 +21,6 @@
 			console.log(os.platform());
 			let platform = os.platform();
 			btn.addEventListener("click", async () => {
-				const ok = await ensurePermission();
-				if (!ok) {
-					alert(
-						"Notifications are blocked. Please allow them to see the test.",
-					);
-					return;
-				}
 				new Notification("Hello from Electron", {
 					body: "You're on " + platform,
 				});

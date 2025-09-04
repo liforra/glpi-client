@@ -4,27 +4,30 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 module.exports = {
 	packagerConfig: {
 		asar: true,
-		executableName: "liforratest",
+		executableName: "LiforraTest",
 		icon: "./icon", // base name, Forge will find .ico/.icns/.png
 	},
 	rebuildConfig: {},
 	makers: [
-		// Windows only
+		// Windows installer
 		{
 			name: "@electron-forge/maker-squirrel",
 			platforms: ["win32"],
 			config: {
-				name: "liforratest",
-				setupExe: "liforratest-Setup-${version}.exe",
-				noMsi: true, // disable MSI to reduce file conflicts
+				name: "LiforraTest",
+				setupExe: "LiforraTest-Installer.exe",
+				noMsi: true,
 				//certificateFile: "./cert.pfx",
 				//certificatePassword: process.env.CERTIFICATE_PASSWORD,
 			},
 		},
-		// macOS only
+		// Windows portable
 		{
 			name: "@electron-forge/maker-zip",
-			platforms: ["darwin"],
+			platforms: ["win32"],
+			config: {
+				name: "LiforraTest-Portable",
+			},
 		},
 		// Linux only
 		{
@@ -46,7 +49,7 @@ module.exports = {
 					runtime: "org.freedesktop.Platform",
 					runtimeVersion: "23.08",
 					sdk: "org.freedesktop.Sdk",
-					command: "liforratest",
+					command: "LiforraTest",
 					icon: "./icon.png",
 					finishArgs: [
 						"--share=network",

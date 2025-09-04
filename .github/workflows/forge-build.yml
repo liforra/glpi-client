@@ -28,8 +28,8 @@ jobs:
             libarchive-tools \
             flatpak flatpak-builder bubblewrap ostree \
             desktop-file-utils appstream
-          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
 
       - name: Install dependencies
         run: npm ci
@@ -53,7 +53,7 @@ jobs:
           if-no-files-found: warn
 
   windows:
-    name: Windows (Squirrel)
+    name: Windows (Installer + Portable)
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -114,6 +114,17 @@ jobs:
           exit 1
         shell: powershell
 
+      - name: Rename portable zip file
+        run: |
+          Get-ChildItem -Path "out\make" -Recurse -Filter "*.zip" | ForEach-Object {
+            $newName = $_.Name -replace "win32-x64-.*\.zip$", "LiforraTest-Portable.zip"
+            if ($newName -ne $_.Name) {
+              Rename-Item -Path $_.FullName -NewName $newName
+              Write-Host "Renamed $($_.Name) to $newName"
+            }
+          }
+        shell: powershell
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -124,37 +135,9 @@ jobs:
             out/make/**/*.zip
           if-no-files-found: warn
 
-  macos:
-    name: macOS (zip)
-    runs-on: macos-14
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build (Forge make)
-        run: npm run make
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: |
-            out/make/**/*.dmg
-            out/make/**/*.zip
-          if-no-files-found: warn
-
   prerelease:
     name: Create/Update Pre-release
-    needs: [linux, windows, macos]
+    needs: [linux, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
