@@ -49,26 +49,6 @@ module.exports = {
 			},
 		},
 		{
-			name: "@electron-forge/maker-flatpak",
-			platforms: ["linux"],
-			config: {
-				options: {
-					id: "de.liforra.liforratest",
-					runtime: "org.freedesktop.Platform",
-					runtimeVersion: "23.08",
-					sdk: "org.freedesktop.Sdk",
-					command: "LiforraTest",
-					icon: "./icon.png",
-					finishArgs: [
-						"--share=network",
-						"--socket=fallback-x11",
-						"--socket=wayland",
-						"--device=dri",
-					],
-				},
-			},
-		},
-		{
 			name: "@reforged/maker-appimage",
 			platforms: ["linux"],
 			config: {

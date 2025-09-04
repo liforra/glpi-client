@@ -7,7 +7,7 @@ on:
 
 jobs:
   linux:
-    name: Linux (deb/rpm/flatpak/appimage)
+    name: Linux (deb/rpm/appimage)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -19,17 +19,14 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Install system deps for deb/rpm/flatpak/appimage
+      - name: Install system deps for deb/rpm/appimage
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             dpkg-dev debhelper fakeroot \
             rpm cpio \
             libarchive-tools \
-            flatpak flatpak-builder bubblewrap ostree \
             desktop-file-utils appstream
-          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
 
       - name: Install dependencies
         run: npm ci
@@ -46,7 +43,6 @@ jobs:
           path: |
             out/make/**/*.deb
             out/make/**/*.rpm
-            out/make/**/*.flatpak
             out/make/**/*.AppImage
             out/make/**/*.zip
             out/make/**/*.tar.gz
