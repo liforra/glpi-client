@@ -33,12 +33,20 @@ module.exports = {
 		{
 			name: "@electron-forge/maker-deb",
 			platforms: ["linux"],
-			config: {},
+			config: {
+				options: {
+					bin: "LiforraTest",
+				},
+			},
 		},
 		{
 			name: "@electron-forge/maker-rpm",
 			platforms: ["linux"],
-			config: {},
+			config: {
+				options: {
+					bin: "LiforraTest",
+				},
+			},
 		},
 		{
 			name: "@electron-forge/maker-flatpak",
@@ -50,6 +58,7 @@ module.exports = {
 					runtimeVersion: "23.08",
 					sdk: "org.freedesktop.Sdk",
 					command: "LiforraTest",
+					bin: "LiforraTest",
 					icon: "./icon.png",
 					finishArgs: [
 						"--share=network",
