@@ -9,8 +9,6 @@ jobs:
   linux:
     name: Linux (deb/rpm/flatpak)
     runs-on: ubuntu-24.04
-    outputs:
-      artifact-paths: ${{ steps.collect.outputs.paths }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,9 +24,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             dpkg-dev debhelper fakeroot \
-            rpm rpm2cpio cpio bsdtar \
+            rpm cpio \
+            libarchive-tools \
             flatpak flatpak-builder bubblewrap ostree
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          # Adjust runtime version if your forge flatpak maker uses a different one
           flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
 
       - name: Install dependencies
@@ -44,7 +44,12 @@ jobs:
         with:
           name: linux-artifacts
           path: |
-            out/make/**/*.{deb,rpm,flatpak,zip,tar.gz,tar.xz}
+            out/make/**/*.deb
+            out/make/**/*.rpm
+            out/make/**/*.flatpak
+            out/make/**/*.zip
+            out/make/**/*.tar.gz
+            out/make/**/*.tar.xz
           if-no-files-found: warn
 
   windows:
@@ -63,19 +68,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (Forge make)
-        run: npm run make
+      - name: Temporarily exclude Squirrel vendor from Defender
+        run: |
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE\node_modules\electron-winstaller\vendor"
+        shell: powershell
+
+      - name: Build (Forge make) with retry
+        run: |
+          for /l %%x in (1, 1, 3) do (
+            echo Attempt %%x...
+            npm run make && goto :ok
+            timeout /t 5 >NUL
+          )
+          exit /b 1
+          :ok
+        shell: cmd
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
           path: |
-            out/make/**/*.{exe,msi,zip}
+            out/make/**/*.exe
+            out/make/**/*.msi
+            out/make/**/*.zip
           if-no-files-found: warn
 
   macos:
-    name: macOS (zip/dmg if configured)
+    name: Mac (zip/dmg if configured)
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -98,7 +118,8 @@ jobs:
         with:
           name: macos-artifacts
           path: |
-            out/make/**/*.{dmg,zip}
+            out/make/**/*.dmg
+            out/make/**/*.zip
           if-no-files-found: warn
 
   prerelease:
@@ -119,7 +140,9 @@ jobs:
           SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           BRANCH="${GITHUB_REF_NAME}"
           RUNID="${GITHUB_RUN_ID}"
-          TAG="ci-${BRANCH}-${SHORT_SHA}-${RUNID}"
+          # Sanitize branch for tag
+          TAG_SAFE=$(echo "$BRANCH" | tr '/@# ' '----')
+          TAG="ci-${TAG_SAFE}-${SHORT_SHA}-${RUNID}"
           NAME="CI Pre-release ${BRANCH} ${SHORT_SHA}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "name=${NAME}" >> "$GITHUB_OUTPUT"
