@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-US">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="light dark" />
+		<link rel="stylesheet" href="../resources/pico.purple.min.css" />
+		<title>Hello world!</title>
+	</head>
+	<body>
+		<main class="container">
+			<h1>Hello world!</h1>
+			<button id="notifyBtn">Test</button>
+		</main>
+		<script>
+			const btn = document.getElementById("notifyBtn");
+			const os = require("node:os");
+			async function ensurePermission() {
+				return true;
+			}
+			console.log(os.platform());
+			let platform = os.platform();
+			btn.addEventListener("click", async () => {
+				const ok = await ensurePermission();
+				if (!ok) {
+					alert(
+						"Notifications are blocked. Please allow them to see the test.",
+					);
+					return;
+				}
+				new Notification("Hello from Electron", {
+					body: "You're on " + platform,
+				});
+			});
+		</script>
+	</body>
+</html>
