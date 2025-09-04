@@ -65,6 +65,7 @@ module.exports = {
 			platforms: ["linux"],
 			config: {
 				options: {
+					bin: "LiforraTest",
 					categories: ["Network"],
 					icon: "icon.png",
 				},
