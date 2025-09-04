@@ -7,7 +7,7 @@ on:
 
 jobs:
   linux:
-    name: Linux (deb/rpm/flatpak)
+    name: Linux (deb/rpm/flatpak/appimage)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -19,16 +19,16 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Install system deps for deb/rpm/flatpak
+      - name: Install system deps for deb/rpm/flatpak/appimage
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             dpkg-dev debhelper fakeroot \
             rpm cpio \
             libarchive-tools \
-            flatpak flatpak-builder bubblewrap ostree
+            flatpak flatpak-builder bubblewrap ostree \
+            desktop-file-utils appstream
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          # Adjust runtime version if your forge flatpak maker uses a different one
           flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
 
       - name: Install dependencies
@@ -47,9 +47,9 @@ jobs:
             out/make/**/*.deb
             out/make/**/*.rpm
             out/make/**/*.flatpak
+            out/make/**/*.AppImage
             out/make/**/*.zip
             out/make/**/*.tar.gz
-            out/make/**/*.tar.xz
           if-no-files-found: warn
 
   windows:
@@ -68,21 +68,51 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Temporarily exclude Squirrel vendor from Defender
+      - name: Clean previous builds
         run: |
-          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE\node_modules\electron-winstaller\vendor"
+          if (Test-Path "out") { Remove-Item -Recurse -Force "out" }
         shell: powershell
 
-      - name: Build (Forge make) with retry
+      - name: Exclude paths from Windows Defender
         run: |
-          for /l %%x in (1, 1, 3) do (
-            echo Attempt %%x...
-            npm run make && goto :ok
-            timeout /t 5 >NUL
-          )
-          exit /b 1
-          :ok
-        shell: cmd
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE\node_modules"
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE\out"
+        shell: powershell
+
+      - name: Build with PowerShell retry
+        run: |
+          $maxAttempts = 3
+          $attempt = 1
+
+          do {
+            Write-Host "Attempt $attempt of $maxAttempts..."
+            
+            # Clean output dir before retry
+            if (Test-Path "out") { 
+              Remove-Item -Recurse -Force "out" -ErrorAction SilentlyContinue
+              Start-Sleep -Seconds 2
+            }
+            
+            try {
+              npm run make
+              Write-Host "Build successful on attempt $attempt"
+              exit 0
+            }
+            catch {
+              Write-Host "Attempt $attempt failed: $($_.Exception.Message)"
+              if ($attempt -lt $maxAttempts) {
+                Write-Host "Waiting 10 seconds before retry..."
+                Start-Sleep -Seconds 10
+              }
+            }
+            
+            $attempt++
+          } while ($attempt -le $maxAttempts)
+
+          Write-Host "All attempts failed"
+          exit 1
+        shell: powershell
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -95,7 +125,7 @@ jobs:
           if-no-files-found: warn
 
   macos:
-    name: Mac (zip/dmg if configured)
+    name: macOS (zip)
     runs-on: macos-14
     steps:
       - name: Checkout
