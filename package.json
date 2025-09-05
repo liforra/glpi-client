@@ -5,11 +5,12 @@
 	"description": "My Electron application description",
 	"main": "src/index.js",
 	"scripts": {
-		"start": "electron-forge start",
+		"start": "electron-forge start -- --no-sandbox",
 		"package": "electron-forge package",
 		"make": "electron-forge make",
 		"publish": "electron-forge publish",
-		"lint": "echo \"No linting configured\""
+		"lint": "echo \"No linting configured\"",
+		"live-dev": ""
 	},
 	"keywords": [],
 	"author": {

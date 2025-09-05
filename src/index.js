@@ -1,11 +1,10 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("node:path");
-
+const { spawn } = require("child_process"); // Add this line!
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
 	app.quit();
 }
-
 const createWindow = () => {
 	// Create the browser window.
 	const win = new BrowserWindow({
@@ -14,7 +13,6 @@ const createWindow = () => {
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false, // often paired with nodeIntegration
-			sandbox: false, // usually disabled in this setup
 		},
 	});
 
@@ -22,14 +20,20 @@ const createWindow = () => {
 	win.loadFile(path.join(__dirname, "index.html"));
 
 	// Open the DevTools.
-	win.webContents.openDevTools();
+	//win.webContents.openDevTools();
 };
-
+function isRunningAsAdmin() {
+	return true;
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-	createWindow();
+	if (isRunningAsAdmin()) {
+		createWindow();
+	} else {
+		requestElevationAndRestart();
+	}
 
 	// On OS X it's common to re-create a window in the app when the
 	// dock icon is clicked and there are no other windows open.
